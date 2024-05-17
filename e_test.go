@@ -1,4 +1,5 @@
-// Copyright (C) 2022-2023 by Blackcat Informatics® Inc.
+// Copyright (C) 2023-2023 by Blackcat Informatics® Inc.
+//nolint 
 package e_test
 
 import (
