@@ -28,21 +28,21 @@ func (e Error) JSON() map[string]any {
 
 	eps := []ErrorPathJSON{}
 	path := e.Path()
-	
+
 	for _, p := range path {
 		ep := ErrorPathJSON{
 			Caller: fmt.Sprintf("%s:%d/%s -> %s", p.FileName, p.LineNumber, p.FuncName, p.Msg),
 		}
-		
+
 		vals := p.Values()
-		
+
 		for _, v := range vals {
 			ep.Values = append(ep.Values, c.Sdump(v))
 		}
-		
+
 		eps = append(eps, ep)
 	}
-	
+
 	ret["Path"] = eps
 
 	return ret
