@@ -1,6 +1,5 @@
 // Copyright (C) 2022, 2023, 2024 by Blackcat Informatics® Inc.
-//
-// nolint: varnamelen,revive
+
 package e
 
 import (
@@ -11,22 +10,20 @@ import (
 	"time"
 )
 
-type ValueType int
-
-const (
-	ValTypeString ValueType = iota
-)
-
+// V wraps variables that you want to include in a error as extra data.
 type V struct {
 	K string
-	I interface{}
+	I any
 }
 
 type (
-	Value  interface{}
+	// Value is any variable that you want to add to an error frame.
+	Value any
+	// Values is a list of variables added to an error frame.
 	Values []Value
 )
 
+// ValueFunc is for lamndas that capture local values in error frames.
 type ValueFunc func() Values
 
 type PathElement struct {
@@ -47,11 +44,11 @@ type ErrorClass interface {
 
 // The unexported internal error pointer.  This is what get's passed
 // around but is opaque by design to calling code.
-//
-// nolint: containedctx
 type errorData struct {
-	createdAt      time.Time
-	originerror    error
+	createdAt   time.Time
+	originerror error
+	// We make a copy of the ctx here, not to use in a context sense but so we can dump it as part of the error.
+	//nolint: containedctx
 	originContext  context.Context
 	originContextP bool
 	class          ErrorClass
@@ -62,8 +59,6 @@ type errorData struct {
 type Error = *errorData
 
 // Resolve the set of values for this path element.
-//
-// nolint: nonamedreturns
 func (pe PathElement) Values() (vals Values) {
 	if pe.ValFunc == nil {
 		return Values{}
@@ -92,7 +87,7 @@ func (pe PathElement) Values() (vals Values) {
 	vals = pe.values
 	vals = append(vals, pe.ValFunc()...)
 
-	return
+	return vals
 }
 
 func newPathElement(msg string) PathElement {
@@ -138,14 +133,14 @@ func Full[T ErrorClass](ctx context.Context, msg string, valFunc ValueFunc) Erro
 	return e
 }
 
-func Wrap(e Error, msg string) Error {
-	if e == nil {
+func Wrap(errorToWrap Error, msg string) Error {
+	if errorToWrap == nil {
 		return New[UnknownError](msg)
 	}
 
-	e.path = append(e.path, newPathElement(msg))
+	errorToWrap.path = append(errorToWrap.path, newPathElement(msg))
 
-	return e
+	return errorToWrap
 }
 
 func WrapError[T ErrorClass](err error) Error {
@@ -153,17 +148,17 @@ func WrapError[T ErrorClass](err error) Error {
 		return New[NoError]("no error")
 	}
 
-	e := New[T](err.Error())
-	e.originerror = err
+	eData := New[T](err.Error())
+	eData.originerror = err
 
-	e.path[0].ValFunc = func() Values {
+	eData.path[0].ValFunc = func() Values {
 		return Values{
 			"wrapped_error",
 			V{K: "err", I: err},
 		}
 	}
 
-	return e
+	return eData
 }
 
 func WrapErrorMsg[T ErrorClass](err error, msg string) Error {
@@ -171,16 +166,16 @@ func WrapErrorMsg[T ErrorClass](err error, msg string) Error {
 		return New[NoError]("no error")
 	}
 
-	e := New[T](err.Error())
-	e.path[0].ValFunc = func() Values {
+	eData := New[T](err.Error())
+	eData.path[0].ValFunc = func() Values {
 		return Values{
 			"wrapped_error",
 			V{K: "err", I: err},
 		}
 	}
-	e.path = append(e.path, newPathElement(msg))
+	eData.path = append(eData.path, newPathElement(msg))
 
-	return e
+	return eData
 }
 
 func (e Error) AddValues(valFunc ValueFunc) Error {
@@ -192,7 +187,7 @@ func (e Error) AddValues(valFunc ValueFunc) Error {
 	return e
 }
 
-func (e Error) AddValue(key string, val interface{}) Error {
+func (e Error) AddValue(key string, val any) Error {
 	valFuncOrig := e.path[len(e.path)-1].ValFunc
 	e.path[len(e.path)-1].ValFunc = func() Values {
 		return append(valFuncOrig(), func() Values { return Values{V{K: key, I: val}} })
@@ -209,25 +204,25 @@ func WrapErrorCtx[T ErrorClass](ctx context.Context, err error) Error {
 	return e
 }
 
-func WrapWithVals[T ErrorClass](e Error, msg string, valFunc ValueFunc) Error {
-	if e == nil {
+func WrapWithVals[T ErrorClass](errorToWrap Error, msg string, valFunc ValueFunc) Error {
+	if errorToWrap == nil {
 		return New[T](msg)
 	}
 
-	e.path = append(e.path, newPathElement(msg))
-	e.path[len(e.path)-1].ValFunc = valFunc
+	errorToWrap.path = append(errorToWrap.path, newPathElement(msg))
+	errorToWrap.path[len(errorToWrap.path)-1].ValFunc = valFunc
 
-	return e
+	return errorToWrap
 }
 
 // FullWrap wraps an Error, adds a message and values and possibly updates missing context information.
-func FullWrap[T ErrorClass](ctx context.Context, e Error, msg string, valFunc ValueFunc) Error {
-	if !e.originContextP {
-		e.originContext = ctx
-		e.originContextP = true
+func FullWrap[T ErrorClass](ctx context.Context, errorToWrap Error, msg string, valFunc ValueFunc) Error {
+	if !errorToWrap.originContextP {
+		errorToWrap.originContext = ctx
+		errorToWrap.originContextP = true
 	}
 
-	return WrapWithVals[T](e, msg, valFunc)
+	return WrapWithVals[T](errorToWrap, msg, valFunc)
 }
 
 func (e Error) Path() []PathElement {
@@ -268,7 +263,6 @@ func (e Error) Error() string {
 	return strings.Join(msgs, "; ")
 }
 
-// nolint: ireturn
 func (e Error) Class() ErrorClass {
 	if e == nil {
 		return NoError{}
@@ -281,13 +275,13 @@ func (e Error) Class() ErrorClass {
 	return e.class
 }
 
-func SetClass[T ErrorClass](e Error) {
-	if e.class.Number() != 1 {
+func SetClass[T ErrorClass](errorToUpdate Error) {
+	if errorToUpdate.class.Number() != 1 {
 		return
 	}
 
 	var ec T
-	e.class = ec
+	errorToUpdate.class = ec
 }
 
 func (e Error) Is(target error) bool {
