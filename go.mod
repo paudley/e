@@ -1,6 +1,6 @@
 module github.com/paudley/e
 
-go 1.22
+go 1.20
 
 require (
 	github.com/paudley/colorout v1.0.4
