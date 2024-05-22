@@ -12,7 +12,6 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-// nolint: varnamelen,funlen,cyclop
 
 package e
 
@@ -63,8 +62,6 @@ func (e Error) JSON() map[string]any {
 
 // SummarizeConsole prepares a console friendly version of the error suitable for
 // printing.
-//
-// nolint: funlen,cyclop
 func (e Error) SummarizeConsole() string {
 	msg := e.LastMessage()
 	path := e.Path()
