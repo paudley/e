@@ -8,8 +8,10 @@ import (
 	"runtime"
 )
 
-var filestripRe = regexp.MustCompile(`.*/`)
-var funcfilterRe = regexp.MustCompile(`^(blackcat.ca/)?(?:db|output\.Wrap|cache\...Map.\.Clear)|^runtime`)
+var (
+	filestripRe  = regexp.MustCompile(`.*/`)
+	funcfilterRe = regexp.MustCompile(`^(blackcat.ca/)?(?:db|output\.Wrap|cache\...Map.\.Clear)|^runtime`)
+)
 
 func CallLocation() (string, CallFrame) {
 	backtrace, frames := FilteredStack()
@@ -36,12 +38,14 @@ func FilteredStack() ([]string, []CallFrame) {
 	n := runtime.Callers(1, pcs)
 	stack := pcs[:n]
 	frames := runtime.CallersFrames(stack)
-	frame, more := frames.Next() // special frame.
+	_, more := frames.Next() // special frame.
 	ret := []string{}
 	ret2 := []CallFrame{}
 
 	for more {
+		var frame runtime.Frame
 		frame, more = frames.Next()
+
 		if funcfilterRe.MatchString(frame.Function) {
 			continue
 		}

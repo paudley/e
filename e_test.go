@@ -27,8 +27,10 @@ func fBad() e.Error {
 	return e.New[e.UnknownError]("oops")
 }
 
-var goErr1 = errors.New("goErr1")
-var goErr2 = errors.New("goErr2")
+var (
+	goErr1 = errors.New("goErr1")
+	goErr2 = errors.New("goErr2")
+)
 
 func fBadNested() e.Error {
 	if err := fBad(); err != nil {

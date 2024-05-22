@@ -3,7 +3,7 @@ module github.com/paudley/e
 go 1.22
 
 require (
-	github.com/paudley/colorout v1.0.3
+	github.com/paudley/colorout v1.0.4
 	github.com/smartystreets/goconvey v1.8.1
 )
 

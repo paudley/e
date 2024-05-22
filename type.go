@@ -22,8 +22,10 @@ type V struct {
 	I interface{}
 }
 
-type Value interface{}
-type Values []Value
+type (
+	Value  interface{}
+	Values []Value
+)
 
 type ValueFunc func() Values
 
