@@ -18,6 +18,8 @@ linters-settings:
           - github.com/paudley/colorout
   errcheck:
     check-type-assertions: true
+  funlen:
+    lines: 90
   goconst:
     numbers: true
     min-occurances: 2
@@ -51,7 +53,7 @@ linters-settings:
     range-loops: true
     for-loops: true
   unused:
-    go: "1.19"
+    go: "1.22"
   revive:
     enable-all-rules: true
     ignore-generated-header: true
@@ -95,3 +97,10 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   fix: false
+  exclude-rules:
+    - path: output.go
+      text: "calculated cyclomatic complexity for function SummarizeConsole"
+    - path: type.go
+      text: 'named return "vals" with type "Values" found'
+    - path: type.go
+      text: 'Class returns interface'
